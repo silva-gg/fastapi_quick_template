@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:11-alpine
+    container_name: fastapi_template_db
+    environment:
+      POSTGRES_PASSWORD: api_password
+      POSTGRES_USER: api_user
+      POSTGRES_DB: api_database
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - api_network
+
+volumes:
+  postgres_data:
+
+networks:
+  api_network:
+    driver: bridge
