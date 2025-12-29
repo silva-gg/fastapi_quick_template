@@ -6,8 +6,10 @@ Dependencies are reusable components that can be injected into route handlers.
 
 Instructions:
 1. Use DatabaseDependency in your routes to get a database session
-2. Use CurrentUser to get the authenticated user
-3. Use RequireAdmin to ensure user has admin privileges
+2. Use CurrentUser to get the authenticated user (JWT Bearer token)
+3. Use CurrentUserBasic to get the authenticated user (HTTP Basic Auth)
+4. Use RequireAdmin to ensure user has admin privileges (JWT)
+5. Use RequireAdminBasic for admin with Basic Auth
 """
 
 from typing import Annotated
@@ -24,7 +26,7 @@ from api.users.auth import decode_access_token
 # Type alias for database session dependency
 DatabaseDependency = Annotated[AsyncSession, Depends(get_session)]
 
-# HTTP Bearer token security
+# HTTP Bearer token security (JWT)
 security = HTTPBearer()
 
 
@@ -116,3 +118,11 @@ async def require_admin(current_user: CurrentUser) -> UserModel:
 
 # Type alias for admin user dependency
 RequireAdmin = Annotated[UserModel, Depends(require_admin)]
+
+
+# Import Basic Auth dependencies
+from api.users.basic_auth import get_current_user_basic, require_admin_basic
+
+# Type aliases for Basic Auth
+CurrentUserBasic = Annotated[UserModel, Depends(get_current_user_basic)]
+RequireAdminBasic = Annotated[UserModel, Depends(require_admin_basic)]

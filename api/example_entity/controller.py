@@ -43,7 +43,7 @@ from sqlalchemy.future import select
 from sqlalchemy.exc import IntegrityError
 from fastapi_pagination import Page, paginate
 
-from api.contrib.dependencies import DatabaseDependency
+from api.contrib.dependencies import DatabaseDependency, CurrentUserBasic
 from .schemas import (
     ExampleEntityIn,
     ExampleEntityOut,
@@ -58,15 +58,22 @@ from .models import ExampleEntityModel
 router = APIRouter()
 
 
+# Note: This template uses Basic Auth for simplicity.
+# You can also use JWT auth by importing CurrentUser instead:
+# from api.contrib.dependencies import CurrentUser
+# Then use CurrentUser in your endpoints instead of CurrentUserBasic
+
+
 @router.post(
     '/',
     summary='Create a new example entity',
-    description='Creates a new example entity with the provided data',
+    description='Creates a new example entity with the provided data (requires authentication)',
     status_code=status.HTTP_201_CREATED,
     response_model=ExampleEntityOut
 )
 async def create_entity(
     db_session: DatabaseDependency,
+    current_user: CurrentUserBasic,  # Requires HTTP Basic Authentication
     entity_in: ExampleEntityIn = Body(
         ...,
         description='Entity data to create'
@@ -75,24 +82,25 @@ async def create_entity(
     """
     Create a new example entity
     
+    Requires HTTP Basic Authentication.
+    
     Args:
         db_session: Database session (injected)
+        current_user: Current authenticated user (injected)
         entity_in: Input data for the new entity
         
     Returns:
         ExampleEntityOut: Created entity with id and created_at
         
     Raises:
+        HTTPException 401: If authentication fails
         HTTPException 409: If entity already exists (duplicate)
         HTTPException 500: If database error occurs
         
-    Example request body:
-        {
-            "name": "Example Item",
-            "description": "This is a test",
-            "value": 99.99,
-            "is_active": true
-        }
+    Example with curl:
+        curl -u username:password -X POST http://localhost:8000/examples \
+          -H "Content-Type: application/json" \
+          -d '{"name": "Example Item", "value": 99.99, "is_active": true}'
     """
     try:
         # Create output schema with UUID and timestamp
@@ -232,13 +240,14 @@ async def get_entity_by_id(
 @router.patch(
     '/{entity_id}',
     summary='Update example entity',
-    description='Updates an existing example entity with partial data',
+    description='Updates an existing example entity with partial data (requires authentication)',
     status_code=status.HTTP_200_OK,
     response_model=ExampleEntityOut
 )
 async def update_entity(
     entity_id: UUID4,
     db_session: DatabaseDependency,
+    current_user: CurrentUserBasic,  # Requires HTTP Basic Authentication
     entity_update: ExampleEntityUpdate = Body(
         ...,
         description='Fields to update (all optional)'
@@ -307,12 +316,13 @@ async def update_entity(
 @router.delete(
     '/{entity_id}',
     summary='Delete example entity',
-    description='Deletes an example entity by its UUID',
+    description='Deletes an example entity by its UUID (requires authentication)',
     status_code=status.HTTP_204_NO_CONTENT
 )
 async def delete_entity(
     entity_id: UUID4,
-    db_session: DatabaseDependency
+    db_session: DatabaseDependency,
+    current_user: CurrentUserBasic  # Requires HTTP Basic Authentication
 ):
     """
     Delete an example entity
